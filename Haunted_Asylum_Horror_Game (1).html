@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haunted Asylum Horror Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152/examples/js/controls/PointerLockControls.js"></script>
+    <script>
+        // Scene Setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 2);
+        scene.add(ambientLight);
+
+        const flickerLight = new THREE.PointLight(0xff0000, 1, 50);
+        flickerLight.position.set(0, 5, 0);
+        scene.add(flickerLight);
+
+        // Flickering effect
+        setInterval(() => {
+            flickerLight.intensity = Math.random() * 2;
+        }, 300);
+
+        // Floor
+        const floorGeometry = new THREE.PlaneGeometry(100, 100);
+        const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x333333 });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
+
+        // Walls
+        const wallGeometry = new THREE.BoxGeometry(100, 10, 1);
+        const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x111111 });
+        const wall1 = new THREE.Mesh(wallGeometry, wallMaterial);
+        wall1.position.set(0, 5, -50);
+        scene.add(wall1);
+
+        const wall2 = wall1.clone();
+        wall2.position.set(0, 5, 50);
+        scene.add(wall2);
+
+        const wall3 = new THREE.Mesh(new THREE.BoxGeometry(1, 10, 100), wallMaterial);
+        wall3.position.set(-50, 5, 0);
+        scene.add(wall3);
+
+        const wall4 = wall3.clone();
+        wall4.position.set(50, 5, 0);
+        scene.add(wall4);
+
+        // Player Controls
+        const controls = new THREE.PointerLockControls(camera, document.body);
+        document.body.addEventListener('click', () => {
+            controls.lock();
+        });
+
+        scene.add(controls.getObject());
+        camera.position.y = 2; // Set camera height
+
+        // Movement
+        const keys = {};
+        document.addEventListener('keydown', (event) => keys[event.key] = true);
+        document.addEventListener('keyup', (event) => keys[event.key] = false);
+
+        function movePlayer() {
+            const speed = 0.1;
+            if (keys['w']) controls.moveForward(speed);
+            if (keys['s']) controls.moveForward(-speed);
+            if (keys['a']) controls.moveRight(-speed);
+            if (keys['d']) controls.moveRight(speed);
+        }
+
+        // Jump Scare
+        const ghostGeometry = new THREE.SphereGeometry(1, 32, 32);
+        const ghostMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xff0000 });
+        const ghost = new THREE.Mesh(ghostGeometry, ghostMaterial);
+        ghost.position.set(0, 2, -20);
+        ghost.visible = false;
+        scene.add(ghost);
+
+        setInterval(() => {
+            if (Math.random() > 0.8) {
+                ghost.visible = true;
+                setTimeout(() => ghost.visible = false, 1000);
+            }
+        }, 5000);
+
+        // Audio
+        const listener = new THREE.AudioListener();
+        camera.add(listener);
+
+        const sound = new THREE.Audio(listener);
+        const audioLoader = new THREE.AudioLoader();
+        audioLoader.load('https://assets.mixkit.co/sfx/preview/mixkit-creepy-whisper-echo-2293.mp3', (buffer) => {
+            sound.setBuffer(buffer);
+            sound.setLoop(true);
+            sound.setVolume(0.5);
+            sound.play();
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            movePlayer();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
